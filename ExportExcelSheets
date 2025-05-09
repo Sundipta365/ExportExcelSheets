@@ -1,0 +1,54 @@
+Sub ExportSheetsAsWorkbooks()
+    Dim ws As Worksheet
+    Dim wb As Workbook
+    Dim exportPath As String
+    Dim fDialog As FileDialog
+    Dim sheetName As String
+
+    ' Prompt user to select folder
+    Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)
+    With fDialog
+        .Title = "Select Folder to Save Workbooks"
+        .AllowMultiSelect = False
+        If .Show <> -1 Then
+            MsgBox "Operation cancelled.", vbExclamation
+            Exit Sub
+        End If
+        exportPath = .SelectedItems(1) & "\"
+    End With
+
+    ' Disable alerts for overwrite prompt
+    Application.DisplayAlerts = False
+
+    ' Loop through each worksheet and export
+    For Each ws In ThisWorkbook.Worksheets
+        sheetName = CleanFileName(ws.Name)
+
+        ' Create a new workbook
+        Set wb = Workbooks.Add(xlWBATWorksheet)
+
+        ' Copy worksheet content
+        ws.Copy Before:=wb.Sheets(1)
+        wb.Sheets(2).Delete ' Remove the default blank sheet
+
+        ' Save the new workbook
+        wb.SaveAs Filename:=exportPath & sheetName & ".xlsx", FileFormat:=xlOpenXMLWorkbook
+        wb.Close SaveChanges:=False
+    Next ws
+
+    ' Restore alerts
+    Application.DisplayAlerts = True
+
+    MsgBox "All sheets have been exported successfully.", vbInformation
+End Sub
+
+' Utility function to clean invalid filename characters
+Function CleanFileName(strName As String) As String
+    Dim invalidChars As Variant
+    Dim ch As Variant
+    invalidChars = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+    For Each ch In invalidChars
+        strName = Replace(strName, ch, "_")
+    Next ch
+    CleanFileName = strName
+End Function
